@@ -6,8 +6,6 @@
 #include <unistd.h>
 #include "tree.c"
 
-#define NUMBER_OF_SEARCH 1
-
 int main(void)
 {
     outputTree();

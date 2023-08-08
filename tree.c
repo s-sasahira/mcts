@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include "board.c"
 
+#define NUMBER_OF_SEARCH 1
+
 // モンテカルロ木のノード
 typedef struct Node
 {
@@ -79,24 +81,15 @@ void displayNode(Node node)
 }
 
 // ノードを文字列に変換
-void tostringNode(char str[256], struct Node node)
+void tostringNode(char str[2560], struct Node node)
 {
-    // char *childstr;
-    // for (int i = 0; i < node.childCount; i++)
-    // {
-    //     char *chil;
-    //     sprintf(chil, "%s", tostringNode(*node.child[i]));
-    //     strcat(childstr, chil);
-    // }
-
-    // printf("%p\n", childstr);
-
-    printf("turns:%d\n", node.turn);
-    printf("turns:%d\n", (*(node.parent)).turn);
-
-    char parentstr[1000];
-    tostringNode(parentstr, *(node.parent));
-    printf("aaaaa\n");
+    char childstr[1000] = "";
+    for (int i = 0; i < node.childCount; i++)
+    {
+        char chil[1000];
+        tostringNode(chil, *node.child[i]);
+        strcat(childstr, chil);
+    }
 
     sprintf(str, "{"\
         "\"turn\":%d,"\
@@ -109,11 +102,12 @@ void tostringNode(char str[256], struct Node node)
         "\"ciWinCount\":%d,"\
         "\"crWinCount\":%d,"\
         "\"childCount\":%d,"\
+        "\"child\":[%s]"\
     "},",
         node.turn, node.address, node.rock, 
         node.isEnable, node.isEnd, node.throughCount, 
         node.drawCount, node.ciWinCount, node.crWinCount,
-        node.childCount);
+        node.childCount, childstr);
 }
 
 void displayTree(Node topNode)
@@ -166,6 +160,7 @@ void outputTree()
 
     printf("aa\n");
 
+    char *str = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES, sizeof(char));
     char str[256];
     tostringNode(str, tree);
 
