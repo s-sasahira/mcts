@@ -47,7 +47,10 @@ void displayBoard(int **board)
 
 int randBetween(int max, int min)
 {
-    srand((unsigned int)time(NULL)); // 現在時刻の情報で初期化
+    struct timeval t1;
+    mingw_gettimeofday(&t1, NULL);
+    srand(t1.tv_usec * t1.tv_sec);
+    // srand((unsigned int)time(NULL)); // 現在時刻の情報で初期化
     return (rand()%(max - min + 1)) + min;
 }
 

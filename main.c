@@ -8,7 +8,7 @@
 
 int main(void)
 {
-    outputTree();
+    inputTree();
 
     // // モンテカルロ木
     // Node tree;
@@ -23,7 +23,7 @@ int main(void)
     //         board[o] = (int *)calloc(NUMBER_OF_SIDE, sizeof(int));
     //     }
 
-    //     displayBoard(board);
+    //     // displayBoard(board);
 
     //     Node *currentNode = &tree;
 
@@ -41,30 +41,32 @@ int main(void)
     //         // ランダムに手を選択し、進める
     //         int nextMove = generatePossiblePlace(rock, board);
     //         handOut(nextMove, rock, board);
-    //         displayBoard(board);
+    //         // displayBoard(board);
 
     //         // 新たなノードを作成
     //         turnNumber++;
-    //         Node node;
-    //         initNode(&node);
-    //         // displayNode(*currentNode);
-    //         node.turn = turnNumber;
-    //         node.address = nextMove;
-    //         node.rock = rock;
+    //         Node *node = (Node *)calloc(1, sizeof(Node));
+    //         // printf("turn:%d\n", turnNumber);
+    //         // printf("node:%p\n", node);
+    //         // printf("current:%p\n", currentNode);
+    //         initNode(node);
+    //         (*node).turn = turnNumber;
+    //         (*node).address = nextMove;
+    //         (*node).rock = rock;
+            
 
     //         // 新たなノードを現在のノードの下に設置（まだ作成されていないノードの場合）
-    //         deployNode(&node, currentNode);
+    //         int nextIndex = deployNode(node, currentNode);
+
+    //         // 現在のノードを移動
+    //         currentNode = (*currentNode).child[nextIndex];
 
     //         // 終了判定
     //         wonRock = whichWon(board);
-    //         // printf("wonRock:%d\n", wonRock);
     //         if (wonRock == NOT_FINISHED)
     //         {
     //             // 次のターンへ
-    //             printf("next turn\n");
     //             rock = switchRock(rock);
-    //             turnNumber++;
-    //             currentNode = &node;
     //         }
     //         else
     //         {
@@ -74,13 +76,13 @@ int main(void)
     //                 free(board[o]);
     //             }
     //             free(board);
-    //             printf("break\n");
     //         }
     //     }
 
     //     // 結果を逆伝播する
     //     for (int j = turnNumber; j > -1; j--)
     //     {
+    //         // printf("backprop:%d,address:%p\n", j, currentNode);
     //         // 最後のノードのisEndをtrueに
     //         if (j == turnNumber)
     //         {
@@ -101,9 +103,21 @@ int main(void)
     //             (*currentNode).crWinCount++;
     //             break;
     //         }
-    //         currentNode = (*currentNode).parent;
+
+    //         if ((*currentNode).turn > 0)
+    //         {
+    //             currentNode = (*currentNode).parent;
+    //         }
     //     }
+    //     // sleep(1);
+    //     printf("serch turn:%d\n", i);
     // }
+
+    // printf("tree created\n");
+
+    // outputTree(tree);
+
+    // printf("json file created\n");
 
     // printf("end\n");
 

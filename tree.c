@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include "board.c"
 
-#define NUMBER_OF_SEARCH 1
+#define NUMBER_OF_SEARCH 1000
 #define NUMBER_OF_CHARACTERS_FOR_A_NODE 235
 
 // モンテカルロ木のノード
@@ -81,101 +81,6 @@ void displayNode(Node node)
     printf("crWinCount:%d\n", node.crWinCount);
 }
 
-// ノードを文字列に変換
-void tostringNode(char *str, struct Node node)
-{
-    char *childstr = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
-    for (int i = 0; i < node.childCount; i++)
-    {
-        char *chil = (char *)calloc(NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
-        tostringNode(chil, *node.child[i]);
-        strcat(childstr, chil);
-        free(chil);
-    }
-
-    sprintf(str, "{"\
-        "\"turn\":%d,"\
-        "\"address\":%d,"\
-        "\"rock\":%d,"\
-        "\"isEnable\":%d,"\
-        "\"isEnd\":%d,"\
-        "\"throughCount\":%d,"\
-        "\"drawCount\":%d,"\
-        "\"ciWinCount\":%d,"\
-        "\"crWinCount\":%d,"\
-        "\"childCount\":%d,"\
-        "\"child\":[%s]"\
-    "},",
-        node.turn, node.address, node.rock, 
-        node.isEnable, node.isEnd, node.throughCount, 
-        node.drawCount, node.ciWinCount, node.crWinCount,
-        node.childCount, childstr);
-
-    free(childstr);
-}
-
-void displayTree(Node topNode)
-{
-    // 木を表示
-}
-
-void outputTree()
-{
-    // 木を出力
-    // テストデータ
-    Node tree;
-    initNode(&tree);
-    Node a1;
-    initNode(&a1);
-    a1.turn = 1;
-    Node a2;
-    initNode(&a2);
-    a2.turn = 1;
-    Node b1;
-    initNode(&b1);
-    b1.turn = 2;
-    b1.isEnd = true;
-    Node b2;
-    initNode(&b2);
-    b2.turn = 2;
-    b2.isEnd = true;
-    Node b3;
-    initNode(&b3);
-    b3.turn = 2;
-    b3.isEnd = true;
-    deployNode(&b1, &a1);
-    deployNode(&b2, &a2);
-    deployNode(&b3, &a2);
-    deployNode(&a1, &tree);
-    deployNode(&a2, &tree);
-
-    // インデックスリストを作成
-    int *indexs = (int *)calloc(1, sizeof(int));
-
-    // 現在のインデックスリスト位置
-    int currentIndexs = indexs[0];
-
-    // 現在のノード
-    Node currentNode = tree;
-
-    FILE *file;
-
-    file = fopen("tree.json", "w");
-
-    char *str = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
-    tostringNode(str, tree);
-
-    // printf("str:%s\n", str);
-
-    fprintf(file, "%s", str);
-
-    free(str);
-
-    fclose(file);
-
-    printf("tree file created\n");
-}
-
 // ノードが既に作成済みの場合インデックスを返す
 int isCreated(Node *child, Node *parent)
 {
@@ -191,8 +96,126 @@ int isCreated(Node *child, Node *parent)
     return -1;
 }
 
+// ノードを文字列に変換
+void tostringNode(char *str, struct Node node)
+{
+    char *comma = "";
+    if (node.turn > 0)
+    {
+        if ((*node.parent).childCount > 1 && isCreated(&node, node.parent) > 0)
+        {
+            comma = ",";
+        }
+    }
+
+    char *childstr = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
+    for (int i = 0; i < node.childCount; i++)
+    {
+        char *chil = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
+        tostringNode(chil, *node.child[i]);
+        strcat(childstr, chil);
+        free(chil);
+    }
+
+    sprintf(str, "%s{"\
+        "\"turn\":%d,"\
+        "\"address\":%d,"\
+        "\"rock\":%d,"\
+        "\"throughCount\":%d,"\
+        "\"drawCount\":%d,"\
+        "\"ciWinCount\":%d,"\
+        "\"crWinCount\":%d,"\
+        "\"childCount\":%d,"\
+        "\"child\":[%s]"\
+    "}",
+        comma, node.turn, node.address, node.rock, 
+        node.throughCount, 
+        node.drawCount, node.ciWinCount, node.crWinCount,
+        node.childCount, childstr);
+
+    free(childstr);
+}
+
+// 文字列をノードに変換
+void toNodeString(struct Node *node, char *str)
+{
+    printf("start\n");
+
+    struct Node one;
+
+    char *comma = "";
+    char *childstr = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
+
+    sscanf(str, "{"\
+        "\"turn\":%d,"\
+        "\"address\":%d,"\
+        "\"rock\":%d,"\
+        "\"throughCount\":%d,"\
+        "\"drawCount\":%d,"\
+        "\"ciWinCount\":%d,"\
+        "\"crWinCount\":%d,"\
+        "\"childCount\":%d,"\
+        "\"child\":[%s]"\
+    "}",
+        &one.turn, &one.address, &one.rock, 
+        &one.throughCount, 
+        &one.drawCount, &one.ciWinCount, &one.crWinCount,
+        &one.childCount, childstr);
+    printf("success\n");
+
+
+    printf("childstr:%s\n", childstr);
+}
+
+void displayTree(Node topNode)
+{
+    // 木を表示
+}
+
+void outputTree(Node tree)
+{
+    // 木を出力
+
+    FILE *file;
+
+    file = fopen("tree.json", "w");
+
+    char *str = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
+    tostringNode(str, tree);
+
+    fprintf(file, "%s", str);
+
+    free(str);
+
+    fclose(file);
+
+    printf("tree file created\n");
+}
+
+void inputTree()
+{
+    // 木を入力
+
+    FILE *file;
+
+    file = fopen("tree3.json", "r");
+
+    Node *tree;
+
+    char *str = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
+
+    fscanf(file, "%s", str);
+
+    toNodeString(tree, str);
+
+    // printf("%s", str);
+
+    fclose(file);
+}
+
 // ノードを現在のノードの下に作成する、作成済みの場合は、通過数を加える
-void deployNode(Node *child, Node *parent)
+// 次のノードのインデックスを返す
+int deployNode(Node *child, Node *parent)
 {
     int index = isCreated(child, parent);
     if (index == -1)
@@ -207,7 +230,7 @@ void deployNode(Node *child, Node *parent)
         Node **old = (*parent).child;
 
         // 新しい領域を確保（２階層のうちの１階層目）
-        (*parent).child = (Node **)calloc((*parent).childCount, sizeof(Node));
+        (*parent).child = (Node **)calloc((*parent).childCount, sizeof(Node*));
 
         // 確保した領域に、既存のアドレスをセット
         for (int o = 0; o < (*parent).childCount - 1; o++)
@@ -217,5 +240,11 @@ void deployNode(Node *child, Node *parent)
 
         // 確保した領域の最後に、新規のノードをセット
         (*parent).child[(*parent).childCount - 1] = child;
+
+        return (*parent).childCount - 1;
+    }
+    else
+    {
+        return index;
     }
 }
