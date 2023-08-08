@@ -7,6 +7,7 @@
 #include "board.c"
 
 #define NUMBER_OF_SEARCH 1
+#define NUMBER_OF_CHARACTERS_FOR_A_NODE 235
 
 // モンテカルロ木のノード
 typedef struct Node
@@ -81,14 +82,15 @@ void displayNode(Node node)
 }
 
 // ノードを文字列に変換
-void tostringNode(char str[2560], struct Node node)
+void tostringNode(char *str, struct Node node)
 {
-    char childstr[1000] = "";
+    char *childstr = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
     for (int i = 0; i < node.childCount; i++)
     {
-        char chil[1000];
+        char *chil = (char *)calloc(NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
         tostringNode(chil, *node.child[i]);
         strcat(childstr, chil);
+        free(chil);
     }
 
     sprintf(str, "{"\
@@ -108,6 +110,8 @@ void tostringNode(char str[2560], struct Node node)
         node.isEnable, node.isEnd, node.throughCount, 
         node.drawCount, node.ciWinCount, node.crWinCount,
         node.childCount, childstr);
+
+    free(childstr);
 }
 
 void displayTree(Node topNode)
@@ -158,15 +162,18 @@ void outputTree()
 
     file = fopen("tree.json", "w");
 
-    printf("aa\n");
-
-    char *str = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES, sizeof(char));
-    char str[256];
+    char *str = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
     tostringNode(str, tree);
 
-    printf("aa\n");
+    // printf("str:%s\n", str);
 
     fprintf(file, "%s", str);
+
+    free(str);
+
+    fclose(file);
+
+    printf("tree file created\n");
 }
 
 // ノードが既に作成済みの場合インデックスを返す
