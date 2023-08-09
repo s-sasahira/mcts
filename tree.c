@@ -4,10 +4,31 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <tchar.h>
+#include <math.h>
 #include "board.c"
+#include "parson.c"
 
 #define NUMBER_OF_SEARCH 1000
 #define NUMBER_OF_CHARACTERS_FOR_A_NODE 235
+
+#define JSON2STRUCT_STR(_json, _struct, _key, _size)                           \
+    do                                                                         \
+    {                                                                          \
+        strncpy(_struct._key, json_object_dotget_string(_json, #_key), _size); \
+    } while (0);
+
+#define JSON2STRUCT_NUM(_json, _struct, _key)                   \
+    do                                                          \
+    {                                                           \
+        _struct._key = json_object_dotget_number(_json, #_key); \
+    } while (0);
+
+#define JSON2STRUCT_BOOL(_json, _struct, _key)                   \
+    do                                                           \
+    {                                                            \
+        _struct._key = json_object_dotget_boolean(_json, #_key); \
+    } while (0);
 
 // モンテカルロ木のノード
 typedef struct Node
@@ -167,11 +188,6 @@ void toNodeString(struct Node *node, char *str)
     printf("childstr:%s\n", childstr);
 }
 
-void displayTree(Node topNode)
-{
-    // 木を表示
-}
-
 void outputTree(Node tree)
 {
     // 木を出力
@@ -192,25 +208,42 @@ void outputTree(Node tree)
     printf("tree file created\n");
 }
 
-void inputTree()
+// jsonオブジェクトを、node構造体に変換
+struct Node convertNode(JSON_Object *json)
 {
-    // 木を入力
+    struct Node node;
+    JSON2STRUCT_NUM(json, node, turn);
+    JSON2STRUCT_NUM(json, node, address);
+    JSON2STRUCT_NUM(json, node, rock);
+    JSON2STRUCT_NUM(json, node, throughCount);
+    JSON2STRUCT_NUM(json, node, drawCount);
+    JSON2STRUCT_NUM(json, node, ciWinCount);
+    JSON2STRUCT_NUM(json, node, crWinCount);
+    JSON2STRUCT_NUM(json, node, childCount);
+    JSON_Array *childJson = json_object_get_array(json, "child");
+    node.child = (struct Node **)calloc(node.childCount, sizeof(Node*));
+    for (int o = 0; o < node.childCount; o++)
+    {
+        node.child[o] = (struct Node *)calloc(1, sizeof(Node));
+    }
+    for (int i = 0; i < node.childCount; i++)
+    {
+        *node.child[i] = convertNode(json_array_get_object(childJson, i));
+    }
+    return node;
+}
 
-    FILE *file;
+// jsonファイルの解析
+void jsonParse()
+{
+    JSON_Value *root_value = json_parse_file("./tree.json");
+    JSON_Object *root = json_object(root_value);
 
-    file = fopen("tree3.json", "r");
+    Node node;
 
-    Node *tree;
+    node = convertNode(root);
 
-    char *str = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
-
-    fscanf(file, "%s", str);
-
-    toNodeString(tree, str);
-
-    // printf("%s", str);
-
-    fclose(file);
+    printf("finished\n");
 }
 
 // ノードを現在のノードの下に作成する、作成済みの場合は、通過数を加える
@@ -246,5 +279,60 @@ int deployNode(Node *child, Node *parent)
     else
     {
         return index;
+    }
+}
+
+// UCBアルゴリズム
+int ucb(struct Node node, int t, int rock)
+{
+    int selected_arm = 0;
+    double max_ucb = 0.0;
+
+    for (int i = 0; i < node.childCount; i++)
+    {
+        if ((*node.child[i]).throughCount == 0)
+        {
+            selected_arm = i;
+            break;
+        }
+
+        int winCount;
+        switch (rock)
+        {
+        case CIRCLE:
+            winCount = (*node.child[i]).ciWinCount;
+            break;
+        case CROSS:
+            winCount = (*node.child[i]).ciWinCount;
+            break;
+        }
+
+        double avg_reward = ((double)winCount + (double)(*node.child[i]).drawCount * 0.5) / (double)(*node.child[i]).throughCount;
+
+        double ucb_value = avg_reward + sqrt(2 * log(t) / (*node.child[i]).throughCount);
+
+        if (ucb_value > max_ucb)
+        {
+            max_ucb = ucb_value;
+            selected_arm = i;
+        }
+    }
+}
+
+// 現在指すことができる手のノードを作成する
+void createNodeFromPossiblePlace(struct Node *node, int rock, int **board)
+{
+    int ablePlace[NUMBER_OF_SQUARES];
+    int ablePlaceCount = getPossiblePlace(ablePlace, rock, board);
+
+    for (int i = 0; i < ablePlaceCount; i++)
+    {
+        Node *newNode = (Node *)calloc(1, sizeof(Node));
+        initNode(newNode);
+        (*newNode).turn = (*node).turn + 1;
+        (*newNode).address = ablePlace[i];
+        (*newNode).rock = rock;
+
+        deployNode(newNode, node);
     }
 }

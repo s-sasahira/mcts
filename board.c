@@ -50,7 +50,6 @@ int randBetween(int max, int min)
     struct timeval t1;
     mingw_gettimeofday(&t1, NULL);
     srand(t1.tv_usec * t1.tv_sec);
-    // srand((unsigned int)time(NULL)); // 現在時刻の情報で初期化
     return (rand()%(max - min + 1)) + min;
 }
 
@@ -158,10 +157,9 @@ bool possibleMove(int address, int rock, int **board)
     return board[address / NUMBER_OF_SIDE][address % NUMBER_OF_SIDE] == NON;
 }
 
-// 石を置ける場所を抽出し、そこからランダムで手を選ぶ
-int generatePossiblePlace(int rock, int **board)
+// 石を置ける場所を抽出し、その数を返す
+int getPossiblePlace(int ablePlace[NUMBER_OF_SQUARES], int rock, int **board)
 {
-    int ablePlace[NUMBER_OF_SQUARES];
     int ablePlaceCount = 0;
     for (int i = 0; i < NUMBER_OF_SQUARES; i++)
     {
@@ -171,6 +169,14 @@ int generatePossiblePlace(int rock, int **board)
             ablePlaceCount++;
         }
     }
+    return ablePlaceCount;
+}
+
+// 石を置ける場所を抽出し、そこからランダムで手を選ぶ
+int generatePossiblePlace(int rock, int **board)
+{
+    int ablePlace[NUMBER_OF_SQUARES];
+    int ablePlaceCount = getPossiblePlace(ablePlace, rock, board);
     return ablePlace[randBetween(ablePlaceCount - 1, 0)];
 }
 
