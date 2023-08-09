@@ -9,7 +9,7 @@
 #include "board.c"
 #include "parson.c"
 
-#define NUMBER_OF_SEARCH 10000
+#define NUMBER_OF_SEARCH 100
 #define NUMBER_OF_CHARACTERS_FOR_A_NODE 235
 
 #define JSON2STRUCT_STR(_json, _struct, _key, _size)                           \
@@ -120,23 +120,32 @@ int isCreated(Node *child, Node *parent)
 // ノードを文字列に変換
 void tostringNode(char *str, struct Node node)
 {
+    
     char *comma = "";
     if (node.turn > 0)
     {
+        printf("parentp:%p\n", node.parent);
+        printf("pcc:%d\n", (*node.parent).childCount);
+        // printf("ic:%d\n", isCreated(&node, node.parent));
         if ((*node.parent).childCount > 1 && isCreated(&node, node.parent) > 0)
         {
             comma = ",";
         }
     }
+    printf("comma:%s\n", comma);
 
     char *childstr = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
     for (int i = 0; i < node.childCount; i++)
     {
         char *chil = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
+        printf("a\n");
         tostringNode(chil, *node.child[i]);
+        printf("b\n");
         strcat(childstr, chil);
+        printf("c\n");
         free(chil);
     }
+    printf("\n%s\n", childstr);
 
     sprintf(str, "%s{"\
         "\"turn\":%d,"\
@@ -153,39 +162,9 @@ void tostringNode(char *str, struct Node node)
         node.throughCount, 
         node.drawCount, node.ciWinCount, node.crWinCount,
         node.childCount, childstr);
+    printf("\n%s\n", str);
 
     free(childstr);
-}
-
-// 文字列をノードに変換
-void toNodeString(struct Node *node, char *str)
-{
-    printf("start\n");
-
-    struct Node one;
-
-    char *comma = "";
-    char *childstr = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
-
-    sscanf(str, "{"\
-        "\"turn\":%d,"\
-        "\"address\":%d,"\
-        "\"rock\":%d,"\
-        "\"throughCount\":%d,"\
-        "\"drawCount\":%d,"\
-        "\"ciWinCount\":%d,"\
-        "\"crWinCount\":%d,"\
-        "\"childCount\":%d,"\
-        "\"child\":[%s]"\
-    "}",
-        &one.turn, &one.address, &one.rock, 
-        &one.throughCount, 
-        &one.drawCount, &one.ciWinCount, &one.crWinCount,
-        &one.childCount, childstr);
-    printf("success\n");
-
-
-    printf("childstr:%s\n", childstr);
 }
 
 void outputTree(Node tree)
@@ -194,10 +173,13 @@ void outputTree(Node tree)
 
     FILE *file;
 
-    file = fopen("tree.json", "w");
+    file = fopen("output.json", "w");
 
     char *str = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
+    printf("comp\n");
     tostringNode(str, tree);
+
+    printf("comp\n");
 
     fprintf(file, "%s", str);
 
@@ -220,6 +202,7 @@ struct Node convertNode(JSON_Object *json)
     JSON2STRUCT_NUM(json, node, ciWinCount);
     JSON2STRUCT_NUM(json, node, crWinCount);
     JSON2STRUCT_NUM(json, node, childCount);
+    // printf("childc:%d\n", node.childCount);
     JSON_Array *childJson = json_object_get_array(json, "child");
     node.child = (struct Node **)calloc(node.childCount, sizeof(Node*));
     for (int o = 0; o < node.childCount; o++)
@@ -228,23 +211,23 @@ struct Node convertNode(JSON_Object *json)
     }
     for (int i = 0; i < node.childCount; i++)
     {
-        printf("pointer:%p\n", node.child[i]);
+        // printf("pointer[%d]:%p\n", i, node.child[i]);
         *node.child[i] = convertNode(json_array_get_object(childJson, i));
+        (*node.child[i]).parent = &node;
+        // printf("ppointer[%d]:%p\n", i, (*node.child[i]).parent);
     }
     return node;
 }
 
 // jsonファイルの解析
-void jsonParse()
+void jsonParse(struct Node *node)
 {
     JSON_Value *root_value = json_parse_file("./tree.json");
     JSON_Object *root = json_object(root_value);
 
-    Node node;
+    *node = convertNode(root);
 
-    node = convertNode(root);
-
-    printf("finished\n");
+    printf("jsonParse finished\n");
 }
 
 // ノードを現在のノードの下に作成する、作成済みの場合は、通過数を加える

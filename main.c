@@ -8,10 +8,13 @@
 
 int main(void)
 {
-
     // モンテカルロ木
     Node tree;
-    initNode(&tree);
+    jsonParse(&tree);
+    outputTree(tree);
+    // initNode(&tree);
+
+    printf("top:%p\n", tree);
 
     for (int i = 0; i < NUMBER_OF_SEARCH; i++)
     {
@@ -38,6 +41,7 @@ int main(void)
         while (wonRock == NOT_FINISHED)
         {
             // UCBにより、手を評価し、選択する
+            // printf("pointer:%p\n", currentNode);
             createNodeFromPossiblePlace(currentNode, rock, board);
             int nextMove = (*(*currentNode).child[ucb(*currentNode, i, rock)]).address;
 
@@ -80,11 +84,7 @@ int main(void)
         // 結果を逆伝播する
         for (int j = turnNumber; j > -1; j--)
         {
-            // 最後のノードのisEndをtrueに
-            if (j == turnNumber)
-            {
-                (*currentNode).isEnd = true;
-            }
+            printf("pointer[%d]:%p\n", j,  currentNode);
 
             // 通過数と結果を加算
             (*currentNode).throughCount++;
