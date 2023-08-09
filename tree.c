@@ -9,7 +9,7 @@
 #include "board.c"
 #include "parson.c"
 
-#define NUMBER_OF_SEARCH 1000
+#define NUMBER_OF_SEARCH 10000
 #define NUMBER_OF_CHARACTERS_FOR_A_NODE 235
 
 #define JSON2STRUCT_STR(_json, _struct, _key, _size)                           \
@@ -228,6 +228,7 @@ struct Node convertNode(JSON_Object *json)
     }
     for (int i = 0; i < node.childCount; i++)
     {
+        printf("pointer:%p\n", node.child[i]);
         *node.child[i] = convertNode(json_array_get_object(childJson, i));
     }
     return node;
@@ -278,6 +279,8 @@ int deployNode(Node *child, Node *parent)
     }
     else
     {
+        free(child);
+        // printf("newNode free\n");
         return index;
     }
 }
@@ -317,6 +320,7 @@ int ucb(struct Node node, int t, int rock)
             selected_arm = i;
         }
     }
+    return selected_arm;
 }
 
 // 現在指すことができる手のノードを作成する

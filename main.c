@@ -37,23 +37,16 @@ int main(void)
 
         while (wonRock == NOT_FINISHED)
         {
-            // // ランダムに手を選択し、進める
-            // int nextMove = generatePossiblePlace(rock, board);
-
             // UCBにより、手を評価し、選択する
             createNodeFromPossiblePlace(currentNode, rock, board);
-            int nextMove = ucb(*currentNode, i, rock);
+            int nextMove = (*(*currentNode).child[ucb(*currentNode, i, rock)]).address;
 
             // 手を指す
             handOut(nextMove, rock, board);
-            // displayBoard(board);
 
             // 新たなノードを作成
             turnNumber++;
             Node *node = (Node *)calloc(1, sizeof(Node));
-            // printf("turn:%d\n", turnNumber);
-            // printf("node:%p\n", node);
-            // printf("current:%p\n", currentNode);
             initNode(node);
             (*node).turn = turnNumber;
             (*node).address = nextMove;
@@ -87,7 +80,6 @@ int main(void)
         // 結果を逆伝播する
         for (int j = turnNumber; j > -1; j--)
         {
-            // printf("backprop:%d,address:%p\n", j, currentNode);
             // 最後のノードのisEndをtrueに
             if (j == turnNumber)
             {
