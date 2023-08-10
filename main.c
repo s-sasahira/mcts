@@ -9,9 +9,9 @@
 int main(void)
 {
     // モンテカルロ木
-    Node tree;
+    Node *tree;
     jsonParse(&tree);
-    outputTree(tree);
+    outputTree(*tree);
     // initNode(&tree);
 
     printf("top:%p\n", tree);
@@ -27,7 +27,7 @@ int main(void)
 
         // displayBoard(board);
 
-        Node *currentNode = &tree;
+        Node *currentNode = tree;
 
         // ターンナンバー
         int turnNumber = 0;
@@ -41,22 +41,22 @@ int main(void)
         while (wonRock == NOT_FINISHED)
         {
             // UCBにより、手を評価し、選択する
-            // printf("pointer:%p\n", currentNode);
             createNodeFromPossiblePlace(currentNode, rock, board);
             int nextMove = (*(*currentNode).child[ucb(*currentNode, i, rock)]).address;
 
             // 手を指す
             handOut(nextMove, rock, board);
 
-            // 新たなノードを作成
+            // ターン数の加算
             turnNumber++;
+
+            // 新たなノードを作成
             Node *node = (Node *)calloc(1, sizeof(Node));
             initNode(node);
             (*node).turn = turnNumber;
             (*node).address = nextMove;
             (*node).rock = rock;
             
-
             // 新たなノードを現在のノードの下に設置（まだ作成されていないノードの場合）
             int nextIndex = deployNode(node, currentNode);
 
@@ -84,8 +84,6 @@ int main(void)
         // 結果を逆伝播する
         for (int j = turnNumber; j > -1; j--)
         {
-            printf("pointer[%d]:%p\n", j,  currentNode);
-
             // 通過数と結果を加算
             (*currentNode).throughCount++;
             switch (wonRock)
@@ -111,7 +109,7 @@ int main(void)
 
     printf("tree created\n");
 
-    outputTree(tree);
+    outputTree(*tree);
 
     printf("json file created\n");
 

@@ -9,7 +9,7 @@
 #include "board.c"
 #include "parson.c"
 
-#define NUMBER_OF_SEARCH 100
+#define NUMBER_OF_SEARCH 10
 #define NUMBER_OF_CHARACTERS_FOR_A_NODE 235
 
 #define JSON2STRUCT_STR(_json, _struct, _key, _size)                           \
@@ -118,114 +118,85 @@ int isCreated(Node *child, Node *parent)
 }
 
 // ノードを文字列に変換
-void tostringNode(char *str, struct Node node)
+JSON_Object* convertJsonObject(JSON_Object *jsonObject, struct Node node)
 {
-    
-    char *comma = "";
-    if (node.turn > 0)
+    json_object_set_number(jsonObject, "turn", node.turn);
+    json_object_set_number(jsonObject, "address", node.address);
+    json_object_set_number(jsonObject, "rock", node.rock);
+    json_object_set_number(jsonObject, "throughCount", node.throughCount);
+    json_object_set_number(jsonObject, "drawCount", node.drawCount);
+    json_object_set_number(jsonObject, "ciWinCount", node.ciWinCount);
+    json_object_set_number(jsonObject, "crWinCount", node.crWinCount);
+    json_object_set_number(jsonObject, "childCount", node.childCount);
+    JSON_Value *childJsonValue = json_value_init_array();
+    JSON_Array *childJsonArray = json_value_get_array(childJsonValue);
+    for (int o = 0; o < node.childCount; o++)
     {
-        printf("parentp:%p\n", node.parent);
-        printf("pcc:%d\n", (*node.parent).childCount);
-        // printf("ic:%d\n", isCreated(&node, node.parent));
-        if ((*node.parent).childCount > 1 && isCreated(&node, node.parent) > 0)
-        {
-            comma = ",";
-        }
+        JSON_Value *achildJsonValue = json_value_init_object();
+        JSON_Object *achildJsonObject = json_value_get_object(achildJsonValue);
+        achildJsonObject = convertJsonObject(achildJsonObject, *node.child[o]);
+        json_array_append_value(childJsonArray, achildJsonValue);
     }
-    printf("comma:%s\n", comma);
-
-    char *childstr = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
-    for (int i = 0; i < node.childCount; i++)
-    {
-        char *chil = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
-        printf("a\n");
-        tostringNode(chil, *node.child[i]);
-        printf("b\n");
-        strcat(childstr, chil);
-        printf("c\n");
-        free(chil);
-    }
-    printf("\n%s\n", childstr);
-
-    sprintf(str, "%s{"\
-        "\"turn\":%d,"\
-        "\"address\":%d,"\
-        "\"rock\":%d,"\
-        "\"throughCount\":%d,"\
-        "\"drawCount\":%d,"\
-        "\"ciWinCount\":%d,"\
-        "\"crWinCount\":%d,"\
-        "\"childCount\":%d,"\
-        "\"child\":[%s]"\
-    "}",
-        comma, node.turn, node.address, node.rock, 
-        node.throughCount, 
-        node.drawCount, node.ciWinCount, node.crWinCount,
-        node.childCount, childstr);
-    printf("\n%s\n", str);
-
-    free(childstr);
+    json_object_dotset_value(jsonObject, "child", childJsonValue);
+    return jsonObject;
 }
 
 void outputTree(Node tree)
 {
     // 木を出力
 
-    FILE *file;
+    JSON_Value *root_value = json_value_init_object();
+    JSON_Object *root_object = json_value_get_object(root_value);
 
-    file = fopen("output.json", "w");
+    root_object = convertJsonObject(root_object, tree);
 
-    char *str = (char *)calloc(NUMBER_OF_SEARCH * NUMBER_OF_SQUARES * NUMBER_OF_SQUARES * NUMBER_OF_CHARACTERS_FOR_A_NODE, sizeof(char));
-    printf("comp\n");
-    tostringNode(str, tree);
+    json_serialize_to_file(root_value, "output2.json");
 
-    printf("comp\n");
-
-    fprintf(file, "%s", str);
-
-    free(str);
-
-    fclose(file);
+    json_value_free(root_value);
 
     printf("tree file created\n");
 }
 
+
+
 // jsonオブジェクトを、node構造体に変換
-struct Node convertNode(JSON_Object *json)
+struct Node* convertNode(JSON_Object *json)
 {
-    struct Node node;
-    JSON2STRUCT_NUM(json, node, turn);
-    JSON2STRUCT_NUM(json, node, address);
-    JSON2STRUCT_NUM(json, node, rock);
-    JSON2STRUCT_NUM(json, node, throughCount);
-    JSON2STRUCT_NUM(json, node, drawCount);
-    JSON2STRUCT_NUM(json, node, ciWinCount);
-    JSON2STRUCT_NUM(json, node, crWinCount);
-    JSON2STRUCT_NUM(json, node, childCount);
-    // printf("childc:%d\n", node.childCount);
+    struct Node *node = (struct Node *)calloc(1, sizeof(Node));
+    JSON2STRUCT_NUM(json, (*node), turn);
+    JSON2STRUCT_NUM(json, (*node), address);
+    JSON2STRUCT_NUM(json, (*node), rock);
+    JSON2STRUCT_NUM(json, (*node), throughCount);
+    JSON2STRUCT_NUM(json, (*node), drawCount);
+    JSON2STRUCT_NUM(json, (*node), ciWinCount);
+    JSON2STRUCT_NUM(json, (*node), crWinCount);
+    JSON2STRUCT_NUM(json, (*node), childCount);
+    // printf("childc:%d\n", (*node).childCount);
     JSON_Array *childJson = json_object_get_array(json, "child");
-    node.child = (struct Node **)calloc(node.childCount, sizeof(Node*));
-    for (int o = 0; o < node.childCount; o++)
+    (*node).child = (struct Node **)calloc((*node).childCount, sizeof(Node*));
+    for (int o = 0; o < (*node).childCount; o++)
     {
-        node.child[o] = (struct Node *)calloc(1, sizeof(Node));
+        (*node).child[o] = (struct Node *)calloc(1, sizeof(Node));
     }
-    for (int i = 0; i < node.childCount; i++)
+    for (int i = 0; i < (*node).childCount; i++)
     {
         // printf("pointer[%d]:%p\n", i, node.child[i]);
-        *node.child[i] = convertNode(json_array_get_object(childJson, i));
-        (*node.child[i]).parent = &node;
+        (*node).child[i] = convertNode(json_array_get_object(childJson, i));
+        (*(*node).child[i]).parent = node;
         // printf("ppointer[%d]:%p\n", i, (*node.child[i]).parent);
     }
     return node;
 }
 
 // jsonファイルの解析
-void jsonParse(struct Node *node)
+void jsonParse(Node **node)
 {
     JSON_Value *root_value = json_parse_file("./tree.json");
     JSON_Object *root = json_object(root_value);
 
     *node = convertNode(root);
+
+    json_value_free(root_value);
 
     printf("jsonParse finished\n");
 }
