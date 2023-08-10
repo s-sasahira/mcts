@@ -157,8 +157,6 @@ void outputTree(Node tree)
     printf("tree file created\n");
 }
 
-
-
 // jsonオブジェクトを、node構造体に変換
 struct Node* convertNode(JSON_Object *json)
 {
